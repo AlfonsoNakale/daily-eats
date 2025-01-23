@@ -62,7 +62,8 @@ export class MapManager {
       this.popup = new mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false,
-        maxWidth: '300px',
+        maxWidth: 'auto',
+        offset: 45,
       })
 
       this.setupEventListeners() // Set up event listeners for map interactions

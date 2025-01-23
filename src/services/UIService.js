@@ -21,7 +21,7 @@ export class UIService {
             <div class="route-summary">
                 <p class="route-summary-title">Route Information<p>
                 <p class="route-summary-distance">Total Distance: ${distance} km</p>
-                <p class="route-summary-duration">Estimated Time:${duration} minutes</p>
+                <p class="route-summary-duration">Estimated Time: ${duration} minutes</p>
             </div>
         `
 
@@ -57,7 +57,7 @@ export class UIService {
       style.id = 'route-styles'
       style.textContent = `
                 .route-info-container {
-                width: 15rem;
+                width: auto;
                 height: auto;
                 margin-left: 0.5rem;
                 padding-top: 16px;
@@ -78,6 +78,7 @@ export class UIService {
                 color: var(--dark-olive-green);
                 font-size: 1.126rem;
                 font-weight: 500;
+                margin-bottom: -10px;
                 }
                 .route-summary-distance {
                 color: var(--dark-olive-green);
