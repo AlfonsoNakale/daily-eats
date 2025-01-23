@@ -41,7 +41,12 @@ export class MapManager {
     try {
       // Create a new map instance with default settings
       this.map = new mapboxgl.Map(mapConfig.defaultMapSettings)
-      this.map.addControl(new mapboxgl.NavigationControl()) // Add navigation controls
+
+      // Share the map instance with UIService
+      UIService.setMapInstance(this.map)
+
+      // Add navigation controls
+      this.map.addControl(new mapboxgl.NavigationControl())
 
       // Add geolocation control to track user location
       const geolocateControl = new mapboxgl.GeolocateControl({
