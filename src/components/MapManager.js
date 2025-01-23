@@ -3,43 +3,47 @@ import { LocationService } from '../services/LocationService.js'
 import { UIService } from '../services/UIService.js'
 import { mapboxgl } from '../utils/mapboxgl.js'
 
+// The MapManager class is responsible for managing the map and its interactions
 export class MapManager {
   constructor() {
-    this.userLocation = null
+    this.userLocation = null // Stores the user's current location
     this.mapLocations = {
-      type: 'FeatureCollection',
+      type: 'FeatureCollection', // GeoJSON format for storing map features
       features: [],
     }
-    this.map = null
-    this.popup = null
-    this.activeRoute = null
-    this.initializeMap()
+    this.map = null // Reference to the map instance
+    this.popup = null // Reference to the popup instance
+    this.activeRoute = null // Stores the currently active route
+    this.initializeMap() // Initialize the map when the class is instantiated
   }
 
+  // Initializes the map with default settings and controls
   initializeMap() {
-    mapboxgl.accessToken = mapConfig.accessToken
+    mapboxgl.accessToken = mapConfig.accessToken // Set the Mapbox access token
 
-    // Check if map container exists
+    // Check if the map container exists in the DOM
     const mapContainer = document.getElementById('map')
     if (!mapContainer) {
       console.error('Map container #map not found')
       throw new Error('Map container #map not found in the DOM')
     }
 
-    // Check map container dimensions
+    // Ensure the map container has dimensions
     if (mapContainer.offsetWidth === 0 || mapContainer.offsetHeight === 0) {
       console.error('Map container has no dimensions:', {
         width: mapContainer.offsetWidth,
         height: mapContainer.offsetHeight,
       })
-      mapContainer.style.width = '100%'
-      mapContainer.style.height = '500px' // Set a default height
+      mapContainer.style.width = '100%' // Set default width
+      mapContainer.style.height = '100vh' // Set default height
     }
 
     try {
+      // Create a new map instance with default settings
       this.map = new mapboxgl.Map(mapConfig.defaultMapSettings)
-      this.map.addControl(new mapboxgl.NavigationControl())
+      this.map.addControl(new mapboxgl.NavigationControl()) // Add navigation controls
 
+      // Add geolocation control to track user location
       const geolocateControl = new mapboxgl.GeolocateControl({
         positionOptions: {
           enableHighAccuracy: true,
@@ -49,88 +53,136 @@ export class MapManager {
       })
       this.map.addControl(geolocateControl)
 
+      // Initialize a popup for displaying information
       this.popup = new mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false,
         maxWidth: '300px',
       })
 
-      this.setupEventListeners()
+      this.setupEventListeners() // Set up event listeners for map interactions
     } catch (error) {
       console.error('Error initializing map:', error)
       throw error
     }
   }
 
+  // Asynchronously initializes the user's location and map points
   async initializeUserLocation() {
     try {
+      // Get the user's current location
       this.userLocation = await LocationService.getUserLocation()
-      this.mapLocations = LocationService.getGeoData()
+      this.mapLocations = LocationService.getGeoData() // Get geo data for map points
 
+      // Fly the map to the user's location
       this.map.flyTo({
         center: [this.userLocation.lng, this.userLocation.lat],
-        zoom: 13,
-        essential: true,
-        duration: 2000,
+        zoom: 16, // set the zoom level
+        essential: true, // ensure the flyTo is essential
+        duration: 2000, // set the duration of the flyTo animation
       })
 
+      // Add a marker at the user's location
       new mapboxgl.Marker({
         color: mapConfig.markerColors.user,
       })
         .setLngLat([this.userLocation.lng, this.userLocation.lat])
         .addTo(this.map)
 
-      this.addMapPoints()
+      this.addMapPoints() // Add points to the map
     } catch (error) {
       console.warn('Error getting user location:', error)
-      this.mapLocations = LocationService.getGeoData()
-      this.addMapPoints()
-      this.setupCountryZoom()
+      this.mapLocations = LocationService.getGeoData() // Fallback to geo data
+      this.addMapPoints() // Add points to the map
+      this.setupCountryZoom() // Set up zoom for country boundaries
     }
   }
 
+  // Adds points to the map from the geo data
   addMapPoints() {
     const layerId = mapConfig.layerSettings.id
 
+    // Remove existing layer and source if they exist
     if (this.map.getLayer(layerId)) {
       this.map.removeLayer(layerId)
     }
-
     if (this.map.getSource(layerId)) {
       this.map.removeSource(layerId)
     }
 
-    this.map.addSource(layerId, {
-      type: 'geojson',
-      data: this.mapLocations,
-    })
+    // Create markers for each location
+    this.mapLocations.features.forEach((location, index) => {
+      // Get the icon URL from the location list
+      const locationNode =
+        document.querySelectorAll('#location-list > *')[index]
+      const iconImg = locationNode?.querySelector('.markericon img')
+      const iconUrl =
+        iconImg?.src ||
+        'https://cdn.prod.website-files.com/678d364888a0aa90f5f49e2c/678fb0a891ae9c935315e936_kitchen-utensils.svg'
 
-    this.map.addLayer({
-      id: layerId,
-      type: 'circle',
-      source: layerId,
-      paint: mapConfig.layerSettings.paint,
+      // Skip placeholder icons
+      if (iconUrl.includes('placeholder.60f9b1840c.svg')) {
+        return
+      }
+
+      // Create marker element
+      const el = document.createElement('div')
+      el.className = 'markericon'
+      el.style.backgroundImage = `url("${iconUrl}")`
+
+      // Create and add the marker to the map
+      const marker = new mapboxgl.Marker({
+        element: el,
+        anchor: 'bottom',
+      })
+        .setLngLat(location.geometry.coordinates)
+        .addTo(this.map)
+
+      // Add click event listener to the marker
+      marker.getElement().addEventListener('click', () => {
+        const e = {
+          features: [
+            {
+              geometry: {
+                coordinates: location.geometry.coordinates,
+              },
+              properties: location.properties,
+            },
+          ],
+          lngLat: {
+            lng: location.geometry.coordinates[0],
+            lat: location.geometry.coordinates[1],
+          },
+        }
+        this.handleLocationClick(e)
+      })
     })
   }
 
+  // Displays a popup with information about a map point
   showPopup(e) {
-    const coordinates = e.features[0].geometry.coordinates.slice()
-    const description = e.features[0].properties.description
+    const coordinates = e.features[0].geometry.coordinates.slice() // Get coordinates
+    const description = e.features[0].properties.description // Get description
 
+    // Adjust coordinates for popup display
     while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
       coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
     }
 
+    // Set and display the popup
     this.popup.setLngLat(coordinates).setHTML(description).addTo(this.map)
   }
 
+  // Sets up zoom for country boundaries
   setupCountryZoom() {
+    // Add a source for country boundaries
     this.map.addSource('country-boundaries', {
       type: 'vector',
       url: 'mapbox://mapbox.country-boundaries-v1',
       promoteId: 'iso_3166_1',
     })
 
+    // Add a layer for country boundaries
     this.map.addLayer({
       id: 'country-boundaries',
       type: 'fill',
@@ -139,10 +191,10 @@ export class MapManager {
       paint: {
         'fill-opacity': 0,
       },
-      filter: ['==', ['get', 'iso_3166_1'], 'GB'],
+      filter: ['==', ['get', 'iso_3166_1'], 'NA'], // Filter for a specific country
     })
 
-    const bounds = new mapboxgl.LngLatBounds()
+    const bounds = new mapboxgl.LngLatBounds() // Initialize bounds for zoom
     const handleSourceData = (e) => {
       if (
         e.sourceId !== 'country-boundaries' ||
@@ -151,6 +203,7 @@ export class MapManager {
         return
       }
 
+      // Get features from the source
       const features = this.map.querySourceFeatures('country-boundaries', {
         sourceLayer: 'country_boundaries',
       })
@@ -160,43 +213,63 @@ export class MapManager {
           if (feature.geometry && feature.geometry.coordinates) {
             feature.geometry.coordinates.forEach((ring) => {
               ring.forEach((coord) => {
-                bounds.extend(coord)
+                bounds.extend(coord) // Extend bounds with coordinates
               })
             })
           }
         })
 
+        // Fit the map to the bounds
         this.map.fitBounds(bounds, {
           padding: { top: 50, bottom: 50, left: 50, right: 50 },
           duration: 1000,
           maxZoom: 12,
         })
 
-        this.map.off('sourcedata', handleSourceData)
+        this.map.off('sourcedata', handleSourceData) // Remove event listener
       }
     }
 
-    this.map.on('sourcedata', handleSourceData)
+    this.map.on('sourcedata', handleSourceData) // Add event listener for source data
   }
 
+  // Handles click events on map locations
   async handleLocationClick(e) {
     const ID = e.features[0].properties.arrayID
 
+    // Show popup for the clicked location
     this.showPopup(e)
 
-    const destinationCoordinates = [
-      e.features[0].geometry.coordinates[0],
-      e.features[0].geometry.coordinates[1],
-    ]
-
-    // Show location list
+    // Show location list and highlight the selected location
     const locationList = document.getElementById('location-list')
     if (locationList) {
       locationList.classList.add('active')
     }
 
+    // Show map wrapper and highlight the selected location
+    const mapWrapper = document.querySelector('.locations-map_wrapper')
+    if (mapWrapper) {
+      mapWrapper.classList.add('is--show')
+    }
+
+    // Remove highlight from all items and highlight the clicked one
+    document
+      .querySelectorAll('.locations-map_item.is--show')
+      .forEach((item) => item.classList.remove('is--show'))
+
+    const locationItems = document.querySelectorAll('.locations-map_item')
+    if (locationItems[ID]) {
+      locationItems[ID].classList.add('is--show')
+    }
+
+    // Get directions if user location is available
     if (this.userLocation) {
       try {
+        const destinationCoordinates = [
+          e.features[0].geometry.coordinates[0],
+          e.features[0].geometry.coordinates[1],
+        ]
+
         const routeData = await LocationService.fetchDirections(
           this.userLocation,
           destinationCoordinates
@@ -211,14 +284,7 @@ export class MapManager {
       }
     }
 
-    document.querySelector('.locations-map_wrapper').classList.add('is--show')
-    document
-      .querySelectorAll('.locations-map_item.is--show')
-      .forEach((item) => item.classList.remove('is--show'))
-    document
-      .querySelectorAll('.locations-map_item')
-      [ID].classList.add('is--show')
-
+    // Ease the map to the clicked location
     this.map.easeTo({
       center: e.features[0].geometry.coordinates,
       speed: 0.5,
@@ -227,14 +293,17 @@ export class MapManager {
     })
   }
 
+  // Displays the route on the map
   displayRoute(routeCoordinates) {
-    const layerId = 'route'
+    const layerId = 'route' // Define the layer ID for the route
 
+    // Remove existing route layer and source if they exist
     if (this.map.getLayer(layerId)) {
       this.map.removeLayer(layerId)
       this.map.removeSource(layerId)
     }
 
+    // Add a new source for the route
     this.map.addSource(layerId, {
       type: 'geojson',
       data: {
@@ -246,6 +315,7 @@ export class MapManager {
       },
     })
 
+    // Add a new layer to display the route
     this.map.addLayer({
       id: layerId,
       type: 'line',
@@ -255,11 +325,12 @@ export class MapManager {
         'line-cap': 'round',
       },
       paint: {
-        'line-color': '#FF0000',
-        'line-width': 5,
+        'line-color': '#FF0000', // Set the line color
+        'line-width': 5, // Set the line width
       },
     })
 
+    // Fit the map to the bounds of the route
     const bounds = routeCoordinates.reduce((bounds, coord) => {
       return bounds.extend(coord)
     }, new mapboxgl.LngLatBounds(routeCoordinates[0], routeCoordinates[0]))
@@ -269,23 +340,27 @@ export class MapManager {
     })
   }
 
+  // Sets up event listeners for map interactions
   setupEventListeners() {
     this.map.on('load', () => {
-      this.initializeUserLocation()
+      this.initializeUserLocation() // Initialize user location on map load
 
+      // Add click event listener for map locations
       this.map.on('click', 'locations', this.handleLocationClick.bind(this))
 
+      // Change cursor and show popup on mouse enter
       this.map.on('mouseenter', 'locations', (e) => {
         this.map.getCanvas().style.cursor = 'pointer'
         this.showPopup(e)
       })
 
+      // Reset cursor and remove popup on mouse leave
       this.map.on('mouseleave', 'locations', () => {
         this.map.getCanvas().style.cursor = ''
         this.popup.remove()
       })
     })
 
-    UIService.setupEventListeners()
+    UIService.setupEventListeners() // Set up additional UI event listeners
   }
 }
