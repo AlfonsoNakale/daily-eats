@@ -123,8 +123,6 @@ export class UIService {
     if (routeInfo) {
       routeInfo.remove()
     }
-
-    console.log('Route cleared successfully')
   }
 
   static setupEventListeners() {
@@ -146,9 +144,6 @@ export class UIService {
         if (wrapper) {
           wrapper.classList.remove('is--show')
           this.clearRoute() // Clear the route when closing
-          console.log(
-            'close-block clicked, removing is--show class and clearing route'
-          )
         }
       })
     }
@@ -161,9 +156,6 @@ export class UIService {
         if (wrapper) {
           wrapper.classList.remove('is--show')
           this.clearRoute() // Clear the route when closing
-          console.log(
-            'close-block clicked via delegation, removing is--show class and clearing route'
-          )
         }
       }
     })

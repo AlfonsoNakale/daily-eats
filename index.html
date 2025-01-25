@@ -7,6 +7,8 @@
     <title>Restaurant Mapper</title>
     <!-- Mapbox CSS -->
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.css' rel='stylesheet' />
+    <!-- Mapbox Search CSS -->
+    <link href="https://api.mapbox.com/search-js/v1.0.0-beta.25/mapbox-search.css" rel="stylesheet">
     <style>
         .mapboxgl-popup-content {
             pointer-events: auto;
@@ -36,14 +38,32 @@
         #location-list.active {
             display: block;
         }
+        #search-box-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1;
+            width: 300px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .mapboxgl-ctrl-geocoder {
+            width: 100% !important;
+            max-width: none !important;
+        }
+
     </style>
   </head>
   <body>
+    <div id="search-box-container"></div>
     <div id="map"></div>
     <div id="location-list"></div>
 
     <!-- Mapbox JS -->
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.js'></script>
+    <!-- Mapbox Search JS -->
+    <script id="search-js" defer src="https://api.mapbox.com/search-js/v1.0.0-beta.25/web.js"></script>
     <!-- Application JS -->
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -37,5 +37,3 @@ if (document.readyState === 'loading') {
     initializeApp()
   })
 }
-
-console.log('Welcome to Vite + JS + Webflow! Local Server')

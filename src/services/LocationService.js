@@ -2,17 +2,34 @@ import { mapboxgl } from '../utils/mapboxgl.js'
 
 export class LocationService {
   static async getUserLocation() {
-    return new Promise((resolve, reject) => {
+    // Default coordinates for Windhoek Central
+    const defaultLocation = {
+      lng: 17.080475533746686,
+      lat: -22.573475211818067,
+      isDefault: true,
+    }
+
+    return new Promise((resolve) => {
       if ('geolocation' in navigator) {
+        // Set a timeout for the geolocation request
+        const timeoutId = setTimeout(() => {
+          console.log('Geolocation request timed out, using default location')
+          resolve(defaultLocation)
+        }, 5000)
+
         navigator.geolocation.getCurrentPosition(
           (position) => {
+            clearTimeout(timeoutId)
             resolve({
               lng: position.coords.longitude,
               lat: position.coords.latitude,
+              isDefault: false,
             })
           },
           (error) => {
-            reject(error)
+            clearTimeout(timeoutId)
+            console.warn('Geolocation error:', error.message)
+            resolve(defaultLocation)
           },
           {
             enableHighAccuracy: true,
@@ -21,7 +38,8 @@ export class LocationService {
           }
         )
       } else {
-        reject(new Error('Geolocation is not supported by this browser'))
+        console.warn('Geolocation is not supported by this browser')
+        resolve(defaultLocation)
       }
     })
   }
