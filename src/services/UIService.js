@@ -57,37 +57,38 @@ export class UIService {
       style.id = 'route-styles'
       style.textContent = `
                 .route-info-container {
-                width: auto;
+                width: 100%;
                 height: auto;
-                margin-left: 0.5rem;
                 padding-top: 16px;
                 padding-right: 16px;
                 padding-bottom: 16px;
                 padding-left: 16px;
+                margin: 0;
                 border-top-left-radius: 8px;
                 border-top-right-radius: 8px;
                 border-bottom-left-radius: 8px;
                 border-bottom-right-radius: 8px;
-                background-color: hsla(0, 0.00%, 100.00%, 1.00);
+                background-color: var(--base-color);
+
                 }
                 .route-summary {
                 position: relative;
                 z-index: 1;
                 }
                 .route-summary-title {
-                color: var(--dark-olive-green);
+                color: var(--white);
                 font-size: 1.126rem;
                 font-weight: 500;
                 margin-bottom: -10px;
                 }
                 .route-summary-distance {
-                color: var(--dark-olive-green);
+                color: var(--white);
                 font-size: 0.9rem;
                 font-weight: 400;
                 margin-bottom: 0px;
                 }
                 .route-summary-duration {
-                color: var(--dark-olive-green);
+                color: var(--white);
                 font-size: 0.9rem;
                 margin-bottom: 0px;
 }

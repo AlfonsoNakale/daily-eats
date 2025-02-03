@@ -42,6 +42,51 @@ export class MapManager {
       // Create a new map instance with default settings
       this.map = new mapboxgl.Map(mapConfig.defaultMapSettings)
 
+      this.map.on('load', () => {
+        // Hide only POI and transit labels, keep place labels
+        const layers = this.map.getStyle().layers
+
+        for (const layer of layers) {
+          if (layer.type === 'symbol') {
+            // Only hide POI and transit labels
+            if (layer.id.includes('poi') || layer.id.includes('transit')) {
+              this.map.setLayoutProperty(layer.id, 'visibility', 'none')
+            }
+          }
+        }
+
+        // Apply faded theme by adjusting opacity and saturation
+        this.map.setPaintProperty('background', 'background-opacity', 0.8)
+
+        // Ensure pedestrian paths and trails are visible
+        this.map.setLayoutProperty('pedestrian', 'visibility', 'visible')
+        this.map.setLayoutProperty('path', 'visibility', 'visible')
+        this.map.setLayoutProperty('trail', 'visibility', 'visible')
+
+        // Ensure road labels are visible
+        this.map.setLayoutProperty('road-label', 'visibility', 'visible')
+
+        // Set light preset to Day
+        this.map.setLight({
+          anchor: 'viewport',
+          color: 'white',
+          intensity: 0.4,
+          position: [1.15, 210, 30],
+        })
+
+        // Add a semi-transparent overlay to create faded effect
+        if (!this.map.getLayer('fade-overlay')) {
+          this.map.addLayer({
+            id: 'fade-overlay',
+            type: 'background',
+            paint: {
+              'background-color': '#ffffff',
+              'background-opacity': 0.2,
+            },
+          })
+        }
+      })
+
       // Share the map instance with UIService
       UIService.setMapInstance(this.map)
 
