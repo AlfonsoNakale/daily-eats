@@ -24,16 +24,16 @@ export class MapManager {
     // Check if the map container exists in the DOM
     const mapContainer = document.getElementById('map')
     if (!mapContainer) {
-      console.error('Map container #map not found')
+      //console.error('Map container #map not found')
       throw new Error('Map container #map not found in the DOM')
     }
 
     // Ensure the map container has dimensions
     if (mapContainer.offsetWidth === 0 || mapContainer.offsetHeight === 0) {
-      console.error('Map container has no dimensions:', {
+      /*console.error('Map container has no dimensions:', {
         width: mapContainer.offsetWidth,
         height: mapContainer.offsetHeight,
-      })
+      })*/
       mapContainer.style.width = '100%' // Set default width
       mapContainer.style.height = '100vh' // Set default height
     }
@@ -216,7 +216,7 @@ export class MapManager {
       }
 
       // Set up the search box
-      console.log('Setting up mapboxgl and marker...')
+      //console.log('Setting up mapboxgl and marker...')
       searchBox.mapboxgl = mapboxgl
       searchBox.marker = false
       searchBox.flyTo = false
@@ -239,7 +239,7 @@ export class MapManager {
       container.appendChild(suggestionsContainer)
 
       // Add the search box to the container
-      console.log('Adding search box to DOM...')
+      //console.log('Adding search box to DOM...')
       container.appendChild(searchBox)
 
       // Function to update suggestions UI
@@ -359,7 +359,7 @@ export class MapManager {
       document.head.appendChild(style)
 
       // Bind search box to map
-      console.log('Binding search box to map...')
+      // console.log('Binding search box to map...')
       searchBox.bindMap(this.map)
     } catch (error) {
       console.error('Error initializing search:', error)
