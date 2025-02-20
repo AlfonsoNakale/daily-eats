@@ -1,3 +1,4 @@
+import { initializeFilters } from '../filters.js'
 import { MapManager } from './components/MapManager.js'
 
 console.log('Script loaded - checking for Webflow...')
@@ -18,8 +19,12 @@ function initializeApp() {
   try {
     new MapManager()
     console.log('MapManager initialized successfully')
+
+    // Initialize filtering functionality
+    initializeFilters()
+    console.log('Filters initialized successfully')
   } catch (error) {
-    console.error('Error initializing MapManager:', error)
+    console.error('Error initializing app:', error)
   }
 }
 
