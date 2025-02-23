@@ -1,18 +1,32 @@
+console.log('Filters.js script loaded!')
+
 // Initialize filtering functionality using Finsweet CMS Filter
 export function initializeFilters() {
   // Check if we have both filter elements and items to filter
   const filterForm = document.querySelector('[fs-cmsfilter-element="filters"]')
   const filterList = document.querySelector('[fs-cmsfilter-element="list"]')
 
+  console.log('Filter elements found:', {
+    filterForm: filterForm ? 'Found' : 'Not found',
+    filterList: filterList ? 'Found' : 'Not found',
+  })
+
   if (!filterForm || !filterList) {
     console.log('Required filter elements not found, skipping initialization')
+    console.log('Make sure you have elements with these attributes:')
+    console.log(
+      '1. fs-cmsfilter-element="filters" on your form/filter container'
+    )
+    console.log(
+      '2. fs-cmsfilter-element="list" on your collection list wrapper'
+    )
     return
   }
 
   console.log('Initializing filters...')
   // 1. Get References to Elements
-  const checkboxes = document.querySelectorAll('[fs-cmsfilter-field]')
-  const cmsItems = document.querySelectorAll('.w-dyn-item')
+  const checkboxes = document.querySelectorAll('input[type="checkbox"]')
+  const cmsItems = document.querySelectorAll('.location-map_card-wrap')
   const itemTagsCache = new Map()
 
   console.log('Found elements:', {
@@ -26,15 +40,23 @@ export function initializeFilters() {
 
     checkboxes.forEach((checkbox) => {
       if (checkbox.checked) {
-        const tag = checkbox.nextElementSibling.textContent.trim()
+        // Get the label text which contains the tag name
+        const tag = checkbox.parentElement
+          ?.querySelector('.w-form-label')
+          ?.textContent?.trim()
+        // Get category from the closest heading
         const category =
-          checkbox.closest('[fs-cmsfilter-element="filters"]')?.dataset
-            .category || 'default'
+          checkbox
+            .closest('div')
+            ?.previousElementSibling?.textContent?.trim() || 'default'
 
-        if (!tagsByCategory.has(category)) {
-          tagsByCategory.set(category, new Set())
+        if (tag) {
+          if (!tagsByCategory.has(category)) {
+            tagsByCategory.set(category, new Set())
+          }
+          tagsByCategory.get(category).add(tag)
+          console.log(`Added tag "${tag}" to category "${category}"`)
         }
-        tagsByCategory.get(category).add(tag)
       }
     })
 
@@ -51,10 +73,18 @@ export function initializeFilters() {
       return itemTagsCache.get(item)
     }
 
-    const itemTagElements = item.querySelectorAll('[fs-cmsfilter-field="tags"]')
-    const itemTags = Array.from(itemTagElements).map((el) =>
-      el.textContent.trim()
-    )
+    const itemTags = []
+
+    // Get all checkbox labels within the item
+    const tagLabels = item.querySelectorAll('.w-form-label')
+    tagLabels.forEach((label) => {
+      const tag = label.textContent.trim()
+      if (tag) itemTags.push(tag)
+    })
+
+    // Get listing type
+    const listingType = item.querySelector('.contact-text')?.textContent?.trim()
+    if (listingType) itemTags.push(listingType)
 
     itemTagsCache.set(item, itemTags)
     console.log('Found tags for item:', itemTags)
@@ -70,7 +100,7 @@ export function initializeFilters() {
     if (selectedTagsByCategory.size === 0) {
       console.log('No filters selected - showing all items')
       cmsItems.forEach((item) => {
-        item.style.display = 'block'
+        item.style.display = ''
       })
       return
     }
@@ -79,20 +109,26 @@ export function initializeFilters() {
     let visibleCount = 0
     cmsItems.forEach((item) => {
       const itemTags = getItemTags(item)
+      console.log('Checking item tags:', itemTags)
 
       // Check if the item matches ALL categories (AND between categories)
       const matchesAllCategories = Array.from(
         selectedTagsByCategory.entries()
-      ).every(([, categoryTags]) => {
+      ).every(([category, categoryTags]) => {
         // Check if the item matches ANY tag in this category (OR within category)
-        const matches = Array.from(categoryTags).some((tag) =>
-          itemTags.includes(tag)
-        )
+        const matches = Array.from(categoryTags).some((tag) => {
+          const hasMatch = itemTags.some(
+            (itemTag) => itemTag.toLowerCase() === tag.toLowerCase()
+          )
+          console.log(`Checking if item has tag "${tag}": ${hasMatch}`)
+          return hasMatch
+        })
+        console.log(`Category "${category}" matches: ${matches}`)
         return matches
       })
 
       // Show or hide the item based on the filter result
-      item.style.display = matchesAllCategories ? 'block' : 'none'
+      item.style.display = matchesAllCategories ? '' : 'none'
       if (matchesAllCategories) visibleCount++
     })
 
