@@ -1,4 +1,5 @@
 import { initializeFilters } from '../filters.js'
+import { initializeListingManager } from '../ListingManager.js'
 import { MapManager } from './components/MapManager.js'
 
 console.log('Main.js script loaded - checking for Webflow...')
@@ -12,6 +13,21 @@ function waitForWebflow(callback) {
     console.log('Waiting for Webflow...')
     setTimeout(() => waitForWebflow(callback), 100)
   }
+}
+
+// Ensure both DOM and Webflow are ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded - waiting for Webflow')
+    waitForWebflow(() => {
+      initializeApp()
+    })
+  })
+} else {
+  console.log('DOM already loaded - waiting for Webflow')
+  waitForWebflow(() => {
+    initializeApp()
+  })
 }
 
 function initializeApp() {
@@ -32,19 +48,7 @@ function initializeApp() {
   } catch (error) {
     console.error('Error initializing app:', error)
   }
-}
+  // Initialize ListingManager
 
-// Ensure both DOM and Webflow are ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded - waiting for Webflow')
-    waitForWebflow(() => {
-      initializeApp()
-    })
-  })
-} else {
-  console.log('DOM already loaded - waiting for Webflow')
-  waitForWebflow(() => {
-    initializeApp()
-  })
+  initializeListingManager()
 }
